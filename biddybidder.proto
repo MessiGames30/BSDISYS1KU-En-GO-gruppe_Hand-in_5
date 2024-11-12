@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+option go_package = "BSDISYS1KU-En-GO-gruppe_Hand-in_5/biddybidderpb";
+
+service ResponsiblePotentialBuyer {
+  // A client sends a message to the chat
+  rpc Bid (bid) returns (ack);
+
+  // A client receives broadcasted messages
+  rpc OngoingAuctions (Empty) returns (auctions);
+
+  // Start function wow
+  rpc StartFunction (Empty) returns (SuccessStart);
+
+}
+
+// message containing successtatus 
+message SuccessStart {
+    string message = 1;
+}
+
+// List of ongoing auctions 
+message auctions {
+  repeated auctionDetails aD = 1;
+}
+
+
+// auctionDetails
+message auctionDetails {
+  int64 auctionID = 1; // auctionID
+  int64 timeleft = 2; // The time that is left on the auction
+  int64 currentBid = 3; // The current highest bid
+}
+
+// Message a client sends to the chat
+message bid {
+  int64 auctionId = 1;
+  int64 amount = 2;  // Bidding amount for the auction item
+}
+
+message ack {
+  bool status = 1;
+}
+
+// Empty message
+message Empty {}

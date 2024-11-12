@@ -1,186 +1,128 @@
 package main
 
 import (
-	pb "Chitty-Chat_HW3_V2/chittychatpb" // Import the generated protobuf package
+	pb "BSDISYS1KU-En-GO-gruppe_Hand-in_5/biddybidderpb"
 	"context"
 	"fmt"
-	"google.golang.org/grpc"
-	"io"
 	"log"
+	"math/rand"
 	"net"
-	"sync"
+	"os"
+	"strconv"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type server struct {
-	pb.UnimplementedChittyChatServer
-	participants map[string]int64
-	messages     []*pb.BroadcastMessage
-	clients      map[string]chan *pb.BroadcastMessage // Channel for each client to send messages
-	mu           sync.Mutex
-	lamportTime  int64
+	pb.UnimplementedConsensusServer
+	address       int
+	targetAddress int
+	started       bool
+	client        pb.ConsensusClient
 }
 
-// Start the server
 func main() {
-	lis, err := net.Listen("tcp", ":50051")
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+	var lis net.Listener
+	var err error
+	address := 2
+	var addrString string
+
+	// server stuff
+	for {
+		addrString = "127.0.0." + strconv.Itoa(address) + ":50051"
+		lis, err = net.Listen("tcp", addrString)
+		if err != nil {
+			address++
+			continue
+		}
+		break
 	}
 
 	grpcServer := grpc.NewServer()
 	s := &server{
-		participants: make(map[string]int64),
-		messages:     []*pb.BroadcastMessage{},
-		clients:      make(map[string]chan *pb.BroadcastMessage), // Initialize the map for client channels
+		address: address,
 	}
-	pb.RegisterChittyChatServer(grpcServer, s)
+	pb.RegisterBiddyBidderServer(grpcServer, s)
 
-	fmt.Println("Server is running on port 50051...")
+	fmt.Println("Server is running on address", addrString)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
+
 }
 
-// PublishMessage - allows clients to send a message
-func (s *server) PublishMessage(ctx context.Context, msg *pb.ChatMessage) (*pb.Empty, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Increment the logical clock for each new message
-	serverTick(msg.Timestamp, s)
-
-	// Create a broadcast message with the logical timestamp
-	broadcast := &pb.BroadcastMessage{
-		Participant: msg.Participant,
-		Message:     msg.Message,
-		Timestamp:   s.lamportTime,
-	}
-	s.messages = append(s.messages, broadcast)
-
-	// Log the message
-	log.Printf("Message from %s: %s", msg.Participant, msg.Message)
-
-	// Broadcast the message to all connected clients
-	for name, ch := range s.clients {
-		serverTick(msg.Timestamp, s)
-		broadcast := &pb.BroadcastMessage{
-			Participant: msg.Participant,
-			Message:     msg.Message,
-			Timestamp:   s.lamportTime,
-		}
-		log.Printf("Sending message to client %s", name)
-		ch <- broadcast
-	}
+func (s *server) PassToken(ctx context.Context, empty *pb.Token) (*pb.Empty, error) {
+	log.Println("Token recieved")
+	go writeToFile(s)
 
 	return &pb.Empty{}, nil
 }
 
-// BroadcastMessages - stream messages to connected clients
-func (s *server) BroadcastMessages(_ *pb.Empty, stream pb.ChittyChat_BroadcastMessagesServer) error {
-	clientID := fmt.Sprintf("client-%d", len(s.clients)+1) // Unique ID for each client
-
-	// Create a message channel for the client
-	msgCh := make(chan *pb.BroadcastMessage, 100)
-	s.mu.Lock()
-	s.clients[clientID] = msgCh // Store client stream channel
-	s.mu.Unlock()
-
-	// Start a goroutine to send messages from the channel to the client
-	go func() {
-		for msg := range msgCh {
-			if err := stream.Send(msg); err != nil {
-				if err == io.EOF || err.Error() == "transport is closing" {
-					log.Printf("Client %s disconnected", clientID)
-					break
-				}
-				log.Printf("Error sending message to client %s: %v", clientID, err)
-			}
+func writeToFile(s *server) {
+	if rand.Intn(10) == 0 {
+		currentTime := time.Now().Format("2006-01-02 15:04:05")
+		data := []byte("Client " + strconv.Itoa(s.address) + " wrote at: " + currentTime + "\n")
+		file, err := os.OpenFile("CriticalSection.txt", os.O_APPEND|os.O_CREATE, 0644)
+		if err != nil {
+			log.Fatal(err)
 		}
-	}()
+		defer file.Close()
 
-	// Wait for the client to disconnect (block until done)
-	<-stream.Context().Done()
+		_, err = file.Write(data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		file.Close()
 
-	// Remove client from active clients
-	s.mu.Lock()
-	delete(s.clients, clientID)
-	s.mu.Unlock()
-
-	log.Printf("Client %s disconnected", clientID)
-	close(msgCh) // Close the message channel
-	return nil
+		log.Println("Wrote to file")
+		time.Sleep(1 * time.Second)
+	}
+	s.client.PassToken(context.Background(), &pb.Token{})
+	log.Println("sent Token")
 }
 
-// JoinChat - client joins and gets a welcome message with a timestamp
-func (s *server) JoinChat(ctx context.Context, p *pb.Participant) (*pb.JoinLeaveResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *server) StartFunction(ctx context.Context, empty *pb.Empty) (*pb.SuccessStart, error) {
+	if s.started {
+		log.Println("Server already started")
+		return &pb.SuccessStart{
+			Message: "Server did not start",
+		}, nil
+	}
+	s.started = true
+	log.Println("Server " + strconv.Itoa(s.address) + " started")
 
-	// Increment logical clock on join
-	serverTick(p.Timestamp, s)
+	s.targetAddress = s.address + 1
+	message, client := connectToServer(s.targetAddress)
+	if message == nil {
+		s.targetAddress = 2
+		message, client = connectToServer(s.targetAddress)
 
-	// Log the join event
-	message := fmt.Sprintf("Participant %s joined Chitty-Chat at Lamport time %d", p.Name, s.lamportTime)
-	log.Println(message)
+	}
+	s.client = client
 
-	// Broadcast the join event to all clients
-	for name, ch := range s.clients {
-		// Increasing lamport time
-		serverTick(p.Timestamp, s)
-		// Create a broadcast message for the join event
-		broadcast := &pb.BroadcastMessage{
-			Participant: p.Name,
-			Message:     "joined the chat",
-			Timestamp:   s.lamportTime,
-		}
-		log.Printf("Notifying client %s about new participant %s", name, p.Name)
-		ch <- broadcast
+	log.Println("Connect Success to address" + strconv.Itoa(s.targetAddress))
+
+	if s.address == 2 {
+		go writeToFile(s)
 	}
 
-	return &pb.JoinLeaveResponse{
-		Message:   message,
-		Timestamp: s.lamportTime,
+	return &pb.SuccessStart{
+		Message: "Server " + strconv.Itoa(s.address) + " started",
 	}, nil
 }
 
-// LeaveChat - client leaves and gets a leave message
-func (s *server) LeaveChat(ctx context.Context, p *pb.Participant) (*pb.JoinLeaveResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Increment logical clock on leave
-	serverTick(p.Timestamp, s)
-	delete(s.participants, p.Name)
-
-	// Log the leave event
-	message := fmt.Sprintf("Participant %s left Chitty-Chat at Lamport time %d", p.Name, s.lamportTime)
-	log.Println(message)
-
-	// Broadcast the leave event to all clients
-	for name, ch := range s.clients {
-		serverTick(p.Timestamp, s)
-		// Create a broadcast message for the leave event
-		broadcast := &pb.BroadcastMessage{
-			Participant: p.Name,
-			Message:     "left the chat",
-			Timestamp:   s.lamportTime,
-		}
-		log.Printf("Notifying client %s about participant %s leaving", name, p.Name)
-		ch <- broadcast
+func connectToServer(address int) (*pb.SuccessStart, pb.BiddyBidderClient) {
+	connectAddress := "127.0.0." + strconv.Itoa(address) + ":50051"
+	conn, err := grpc.NewClient(connectAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect: %v", err)
 	}
+	// defer conn.Close()
 
-	return &pb.JoinLeaveResponse{
-		Message:   message,
-		Timestamp: s.lamportTime,
-	}, nil
-}
+	client := pb.NewBiddyBidderClient(conn)
+	message, err := client.StartFunction(context.Background(), &pb.Empty{})
+	return message, client
 
-func serverTick(recivedTime int64, s *server) int64 {
-	tempTime := s.lamportTime
-	if recivedTime > s.lamportTime {
-		s.lamportTime = recivedTime
-	}
-	s.lamportTime++
-	log.Printf("Server lamport time from: %d to %d", tempTime, s.lamportTime)
-	return s.lamportTime
 }
