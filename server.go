@@ -18,7 +18,7 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedConsensusServer
+	pb.UnimplementedBiddyBidderServer
 	address       int
 	targetAddress int
 	started       bool
@@ -133,7 +133,7 @@ func connectToServer(address int) (*pb.SuccessStart, pb.BiddyBidderClient) {
 
 }
 
-func Bid(bid *pb.Bid) pb.ack {
+func (s *server) Bid(bid *pb.Bid) pb.ack {
 	// Read the auction file
 	// Check if the bid is higher than the current bid
 	// If it is write the new bid to the file
@@ -175,7 +175,7 @@ func Bid(bid *pb.Bid) pb.ack {
 	}
 }
 
-func OngoingAuctions(empty *pb.Empty) *pb.Auctions {
+func (s *server) OngoingAuctions(empty *pb.Empty) *pb.Auctions {
 	// Scan ./Auctions for files
 	// Read the files and return the data
 	// If no files are found return an error

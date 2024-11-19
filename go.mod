@@ -1,4 +1,4 @@
-module Chitty-Chat_HW3_V2
+module BSDISYS1KU-En-GO-gruppe_Hand-in_5
 
 go 1.22
 

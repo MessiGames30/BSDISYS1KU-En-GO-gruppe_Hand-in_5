@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "BSDISYS1KU-En-GO-gruppe_Hand-in_5/biddybidderpb";
 
-service ResponsiblePotentialBuyer {
+service auction {
   // A client sends a message to the chat
   rpc Bid (bid) returns (ack);
 
