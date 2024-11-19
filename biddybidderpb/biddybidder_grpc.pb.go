@@ -19,15 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ResponsiblePotentialBuyer_Bid_FullMethodName             = "/ResponsiblePotentialBuyer/Bid"
-	ResponsiblePotentialBuyer_OngoingAuctions_FullMethodName = "/ResponsiblePotentialBuyer/OngoingAuctions"
-	ResponsiblePotentialBuyer_StartFunction_FullMethodName   = "/ResponsiblePotentialBuyer/StartFunction"
+	Auction_Bid_FullMethodName             = "/auction/Bid"
+	Auction_OngoingAuctions_FullMethodName = "/auction/OngoingAuctions"
+	Auction_StartFunction_FullMethodName   = "/auction/StartFunction"
 )
 
-// ResponsiblePotentialBuyerClient is the client API for ResponsiblePotentialBuyer service.
+// AuctionClient is the client API for Auction service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ResponsiblePotentialBuyerClient interface {
+type AuctionClient interface {
 	// A client sends a message to the chat
 	Bid(ctx context.Context, in *Bid, opts ...grpc.CallOption) (*Ack, error)
 	// A client receives broadcasted messages
@@ -36,167 +36,166 @@ type ResponsiblePotentialBuyerClient interface {
 	StartFunction(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SuccessStart, error)
 }
 
-type responsiblePotentialBuyerClient struct {
+type auctionClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewResponsiblePotentialBuyerClient(cc grpc.ClientConnInterface) ResponsiblePotentialBuyerClient {
-	return &responsiblePotentialBuyerClient{cc}
+func NewAuctionClient(cc grpc.ClientConnInterface) AuctionClient {
+	return &auctionClient{cc}
 }
 
-func (c *responsiblePotentialBuyerClient) Bid(ctx context.Context, in *Bid, opts ...grpc.CallOption) (*Ack, error) {
+func (c *auctionClient) Bid(ctx context.Context, in *Bid, opts ...grpc.CallOption) (*Ack, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Ack)
-	err := c.cc.Invoke(ctx, ResponsiblePotentialBuyer_Bid_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auction_Bid_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *responsiblePotentialBuyerClient) OngoingAuctions(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Auctions, error) {
+func (c *auctionClient) OngoingAuctions(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Auctions, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Auctions)
-	err := c.cc.Invoke(ctx, ResponsiblePotentialBuyer_OngoingAuctions_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auction_OngoingAuctions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *responsiblePotentialBuyerClient) StartFunction(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SuccessStart, error) {
+func (c *auctionClient) StartFunction(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SuccessStart, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SuccessStart)
-	err := c.cc.Invoke(ctx, ResponsiblePotentialBuyer_StartFunction_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Auction_StartFunction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ResponsiblePotentialBuyerServer is the server API for ResponsiblePotentialBuyer service.
-// All implementations must embed UnimplementedResponsiblePotentialBuyerServer
+// AuctionServer is the server API for Auction service.
+// All implementations must embed UnimplementedAuctionServer
 // for forward compatibility.
-type ResponsiblePotentialBuyerServer interface {
+type AuctionServer interface {
 	// A client sends a message to the chat
 	Bid(context.Context, *Bid) (*Ack, error)
 	// A client receives broadcasted messages
 	OngoingAuctions(context.Context, *Empty) (*Auctions, error)
 	// Start function wow
 	StartFunction(context.Context, *Empty) (*SuccessStart, error)
-	mustEmbedUnimplementedResponsiblePotentialBuyerServer()
+	mustEmbedUnimplementedAuctionServer()
 }
 
-// UnimplementedResponsiblePotentialBuyerServer must be embedded to have
+// UnimplementedAuctionServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedResponsiblePotentialBuyerServer struct{}
+type UnimplementedAuctionServer struct{}
 
-func (UnimplementedResponsiblePotentialBuyerServer) Bid(context.Context, *Bid) (*Ack, error) {
+func (UnimplementedAuctionServer) Bid(context.Context, *Bid) (*Ack, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bid not implemented")
 }
-func (UnimplementedResponsiblePotentialBuyerServer) OngoingAuctions(context.Context, *Empty) (*Auctions, error) {
+func (UnimplementedAuctionServer) OngoingAuctions(context.Context, *Empty) (*Auctions, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OngoingAuctions not implemented")
 }
-func (UnimplementedResponsiblePotentialBuyerServer) StartFunction(context.Context, *Empty) (*SuccessStart, error) {
+func (UnimplementedAuctionServer) StartFunction(context.Context, *Empty) (*SuccessStart, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartFunction not implemented")
 }
-func (UnimplementedResponsiblePotentialBuyerServer) mustEmbedUnimplementedResponsiblePotentialBuyerServer() {
-}
-func (UnimplementedResponsiblePotentialBuyerServer) testEmbeddedByValue() {}
+func (UnimplementedAuctionServer) mustEmbedUnimplementedAuctionServer() {}
+func (UnimplementedAuctionServer) testEmbeddedByValue()                 {}
 
-// UnsafeResponsiblePotentialBuyerServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ResponsiblePotentialBuyerServer will
+// UnsafeAuctionServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AuctionServer will
 // result in compilation errors.
-type UnsafeResponsiblePotentialBuyerServer interface {
-	mustEmbedUnimplementedResponsiblePotentialBuyerServer()
+type UnsafeAuctionServer interface {
+	mustEmbedUnimplementedAuctionServer()
 }
 
-func RegisterResponsiblePotentialBuyerServer(s grpc.ServiceRegistrar, srv ResponsiblePotentialBuyerServer) {
-	// If the following call pancis, it indicates UnimplementedResponsiblePotentialBuyerServer was
+func RegisterAuctionServer(s grpc.ServiceRegistrar, srv AuctionServer) {
+	// If the following call pancis, it indicates UnimplementedAuctionServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&ResponsiblePotentialBuyer_ServiceDesc, srv)
+	s.RegisterService(&Auction_ServiceDesc, srv)
 }
 
-func _ResponsiblePotentialBuyer_Bid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auction_Bid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Bid)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ResponsiblePotentialBuyerServer).Bid(ctx, in)
+		return srv.(AuctionServer).Bid(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ResponsiblePotentialBuyer_Bid_FullMethodName,
+		FullMethod: Auction_Bid_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResponsiblePotentialBuyerServer).Bid(ctx, req.(*Bid))
+		return srv.(AuctionServer).Bid(ctx, req.(*Bid))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ResponsiblePotentialBuyer_OngoingAuctions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auction_OngoingAuctions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ResponsiblePotentialBuyerServer).OngoingAuctions(ctx, in)
+		return srv.(AuctionServer).OngoingAuctions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ResponsiblePotentialBuyer_OngoingAuctions_FullMethodName,
+		FullMethod: Auction_OngoingAuctions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResponsiblePotentialBuyerServer).OngoingAuctions(ctx, req.(*Empty))
+		return srv.(AuctionServer).OngoingAuctions(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ResponsiblePotentialBuyer_StartFunction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auction_StartFunction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ResponsiblePotentialBuyerServer).StartFunction(ctx, in)
+		return srv.(AuctionServer).StartFunction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ResponsiblePotentialBuyer_StartFunction_FullMethodName,
+		FullMethod: Auction_StartFunction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResponsiblePotentialBuyerServer).StartFunction(ctx, req.(*Empty))
+		return srv.(AuctionServer).StartFunction(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ResponsiblePotentialBuyer_ServiceDesc is the grpc.ServiceDesc for ResponsiblePotentialBuyer service.
+// Auction_ServiceDesc is the grpc.ServiceDesc for Auction service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ResponsiblePotentialBuyer_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "ResponsiblePotentialBuyer",
-	HandlerType: (*ResponsiblePotentialBuyerServer)(nil),
+var Auction_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "auction",
+	HandlerType: (*AuctionServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Bid",
-			Handler:    _ResponsiblePotentialBuyer_Bid_Handler,
+			Handler:    _Auction_Bid_Handler,
 		},
 		{
 			MethodName: "OngoingAuctions",
-			Handler:    _ResponsiblePotentialBuyer_OngoingAuctions_Handler,
+			Handler:    _Auction_OngoingAuctions_Handler,
 		},
 		{
 			MethodName: "StartFunction",
-			Handler:    _ResponsiblePotentialBuyer_StartFunction_Handler,
+			Handler:    _Auction_StartFunction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
