@@ -31,6 +31,11 @@ type Auction struct {
 	TimeCreated time.Time `json:"Age"`
 }
 
+type Auctions struct {
+	PrimaryAuction   Auction `json:"PrimaryAuction"`
+	SecondaryAuction Auction `json:"SecondaryAuction"`
+}
+
 func main() {
 	var lis net.Listener
 	var err error
@@ -135,7 +140,49 @@ func connectToServer(address int) (*pb.SuccessStart, pb.BiddyBidderClient) {
 
 }
 
-func OngoingAuctions(ey &empty) (&Auction, error) {
+func Bid(bid *pb.Bid) pb.ack {
+	// Read the auction file
+	// Check if the bid is higher than the current bid
+	// If it is write the new bid to the file
+	// If not return an error
+
+	file, err := os.Open("./Auctions/" + strconv.Itoa(bid.AuctionId) + ".json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	jsonData, err := ioutil.ReadAll(file)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	var data Auctions
+	err = json.Unmarshal(jsonData, &data)
+
+	if bid.BidAmount > data.PrimaryAuction.CurrentBid {
+		data.PrimaryAuction.CurrentBid = bid.BidAmount
+		jsonData, err = json.Marshal(data)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		_, err = file.Write(jsonData)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		return pb.ack{
+			Success: true,
+		}
+	}
+
+	return pb.ack{
+		Success: false,
+	}
+}
+
+func OngoingAuctions(empty *pb.Empty) *pb.Auctions {
 	// Scan ./Auctions for files
 	// Read the files and return the data
 	// If no files are found return an error
@@ -144,34 +191,44 @@ func OngoingAuctions(ey &empty) (&Auction, error) {
 		log.Fatal(err)
 	}
 	if len(files) == 0 {
-		return nil, errors.New("No ongoing auctions")
+		return &Auction{}
+	}
+	auctions := pb.Auctions{}
+
+	for i := 0; i < len(files); i++ {
+		file, err := os.Open("./Auctions/" + strconv.Itoa(i) + ".json")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+
+		jsonData, err := ioutil.ReadAll(file)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		var data Auctions
+		err = json.Unmarshal(jsonData, &data)
+
+		auction := GetPrimaryAuctionFromJson(jsonData)
+
+		timeLeft := time.Now().Sub(auction.TimeCreated)
+
+		protoAuction := pb.Auction{
+			AuctionId:  int32(auction.AuctionId),
+			TimeLeft:   timeLeft.String(),
+			CurrentBid: int32(auction.CurrentBid),
+		}
+
+		auctions = append(auctions, &protoAuction)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
 	}
 
-	
-
-	for _, file := range files {
-	
-	}
-
-	file, err := os.Open("./Auctions/" + strconv.Itoa(len(files)) + ".json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	data := Auction{}
-	jsonData, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = json.Unmarshal(jsonData, &data)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return &data, nil
-	
+	return &auctions, nil
 }
 
 func createAuctionFile() (int, error) {
@@ -196,7 +253,12 @@ func createAuctionFile() (int, error) {
 		TimeCreated: time.Now(),
 	}
 
-	jsonData, err := json.Marshal(data)
+	Auctions := Auctions{
+		PrimaryAuction:   data,
+		SecondaryAuction: Auction{},
+	}
+
+	jsonData, err := json.Marshal(Auctions)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -223,15 +285,33 @@ func backupAuction(auction Auction) error {
 
 	file, err := os.Open("./Auctions/" + strconv.Itoa(fileNumber) + ".json")
 
-	jsonData, err := json.Marshal(auction)
+	jsonData, err := ioutil.ReadAll(file)
+
 	if err != nil {
 		log.Fatal(err)
 	}
+	var data Auctions
+	err = json.Unmarshal(jsonData, &data)
+	data.SecondaryAuction = auction
 
-	_, err = file.Write(jsonData)
+	jsonBackedUpData, err := json.Marshal(data)
+
+	_, err = file.Write(jsonBackedUpData)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return nil
+}
+
+func GetPrimaryAuctionFromJson(data []byte) Auction {
+	var auctions Auctions
+
+	err := json.Unmarshal(data, &auctions)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return auctions.PrimaryAuction
 }
