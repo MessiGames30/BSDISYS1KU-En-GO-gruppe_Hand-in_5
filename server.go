@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net"
 	"os"
 	"strconv"
@@ -18,11 +17,11 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedBiddyBidderServer
+	pb.UnimplementedAuctionServer
 	address       int
 	targetAddress int
 	started       bool
-	client        pb.ConsensusClient
+	client        pb.AuctionClient
 }
 
 type Auction struct {
@@ -57,36 +56,13 @@ func main() {
 	s := &server{
 		address: address,
 	}
-	pb.RegisterBiddyBidderServer(grpcServer, s)
+	pb.RegisterAuctionServer(grpcServer, s)
 
 	fmt.Println("Server is running on address", addrString)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
 
-}
-
-func writeToFile(s *server) {
-	if rand.Intn(10) == 0 {
-		currentTime := time.Now().Format("2006-01-02 15:04:05")
-		data := []byte("Client " + strconv.Itoa(s.address) + " wrote at: " + currentTime + "\n")
-		file, err := os.OpenFile("CriticalSection.txt", os.O_APPEND|os.O_CREATE, 0644)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer file.Close()
-
-		_, err = file.Write(data)
-		if err != nil {
-			log.Fatal(err)
-		}
-		file.Close()
-
-		log.Println("Wrote to file")
-		time.Sleep(1 * time.Second)
-	}
-	s.client.PassToken(context.Background(), &pb.Token{})
-	log.Println("sent Token")
 }
 
 func (s *server) StartFunction(ctx context.Context, empty *pb.Empty) (*pb.SuccessStart, error) {
@@ -110,16 +86,12 @@ func (s *server) StartFunction(ctx context.Context, empty *pb.Empty) (*pb.Succes
 
 	log.Println("Connect Success to address" + strconv.Itoa(s.targetAddress))
 
-	if s.address == 2 {
-		go writeToFile(s)
-	}
-
 	return &pb.SuccessStart{
 		Message: "Server " + strconv.Itoa(s.address) + " started",
 	}, nil
 }
 
-func connectToServer(address int) (*pb.SuccessStart, pb.BiddyBidderClient) {
+func connectToServer(address int) (*pb.SuccessStart, pb.AuctionClient) {
 	connectAddress := "127.0.0." + strconv.Itoa(address) + ":50051"
 	conn, err := grpc.NewClient(connectAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -127,19 +99,19 @@ func connectToServer(address int) (*pb.SuccessStart, pb.BiddyBidderClient) {
 	}
 	// defer conn.Close()
 
-	client := pb.NewBiddyBidderClient(conn)
+	client := pb.NewAuctionClient(conn)
 	message, err := client.StartFunction(context.Background(), &pb.Empty{})
 	return message, client
 
 }
 
-func (s *server) Bid(bid *pb.Bid) pb.ack {
+func (s *server) Bid(ctx context.Context, bid *pb.Bid) (*pb.Ack, error) {
 	// Read the auction file
 	// Check if the bid is higher than the current bid
 	// If it is write the new bid to the file
 	// If not return an error
 
-	file, err := os.Open("./Auctions/" + strconv.Itoa(bid.AuctionId) + ".json")
+	file, err := os.Open("./Auctions/" + strconv.Itoa(int(bid.AuctionId)) + ".json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -153,8 +125,8 @@ func (s *server) Bid(bid *pb.Bid) pb.ack {
 	var data Auctions
 	err = json.Unmarshal(jsonData, &data)
 
-	if bid.BidAmount > data.PrimaryAuction.CurrentBid {
-		data.PrimaryAuction.CurrentBid = bid.BidAmount
+	if int(bid.Amount) > data.PrimaryAuction.CurrentBid {
+		data.PrimaryAuction.CurrentBid = int(bid.Amount)
 		jsonData, err = json.Marshal(data)
 		if err != nil {
 			log.Fatal(err)
@@ -165,26 +137,23 @@ func (s *server) Bid(bid *pb.Bid) pb.ack {
 			log.Fatal(err)
 		}
 
-		return pb.ack{
-			Success: true,
-		}
+		return &pb.Ack{
+			Status: true,
+		}, nil
 	}
 
-	return pb.ack{
-		Success: false,
-	}
+	return &pb.Ack{
+		Status: false,
+	}, nil
 }
 
-func (s *server) OngoingAuctions(empty *pb.Empty) *pb.Auctions {
+func (s *server) OngoingAuctions(ctx context.Context, empty *pb.Empty) (*pb.Auctions, error) {
 	// Scan ./Auctions for files
 	// Read the files and return the data
 	// If no files are found return an error
 	files, err := ioutil.ReadDir("./Auctions")
 	if err != nil {
 		log.Fatal(err)
-	}
-	if len(files) == 0 {
-		return &Auction{}
 	}
 	auctions := pb.Auctions{}
 
@@ -196,24 +165,21 @@ func (s *server) OngoingAuctions(empty *pb.Empty) *pb.Auctions {
 		defer file.Close()
 
 		jsonData, err := ioutil.ReadAll(file)
-
 		if err != nil {
 			log.Fatal(err)
 		}
-		var data Auctions
-		err = json.Unmarshal(jsonData, &data)
 
 		auction := GetPrimaryAuctionFromJson(jsonData)
 
 		timeLeft := time.Now().Sub(auction.TimeCreated)
 
-		protoAuction := pb.Auction{
-			AuctionId:  int32(auction.AuctionId),
-			TimeLeft:   timeLeft.String(),
-			CurrentBid: int32(auction.CurrentBid),
+		protoAuction := pb.AuctionDetails{
+			AuctionID:  int64(auction.AuctionId),
+			Timeleft:   timeLeft.Milliseconds(),
+			CurrentBid: int64(auction.CurrentBid),
 		}
 
-		auctions = append(auctions, &protoAuction)
+		auctions.AD = append(auctions.AD, &protoAuction)
 
 		if err != nil {
 			log.Fatal(err)
