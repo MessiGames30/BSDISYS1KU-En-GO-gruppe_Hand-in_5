@@ -19,9 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Auction_Bid_FullMethodName             = "/auction/Bid"
-	Auction_OngoingAuctions_FullMethodName = "/auction/OngoingAuctions"
-	Auction_StartFunction_FullMethodName   = "/auction/StartFunction"
+	Auction_Bid_FullMethodName             = "/Auction/Bid"
+	Auction_OngoingAuctions_FullMethodName = "/Auction/OngoingAuctions"
+	Auction_StartFunction_FullMethodName   = "/Auction/StartFunction"
 )
 
 // AuctionClient is the client API for Auction service.
@@ -182,7 +182,7 @@ func _Auction_StartFunction_Handler(srv interface{}, ctx context.Context, dec fu
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Auction_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "auction",
+	ServiceName: "Auction",
 	HandlerType: (*AuctionServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
