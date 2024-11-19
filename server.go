@@ -66,13 +66,6 @@ func main() {
 
 }
 
-func (s *server) PassToken(ctx context.Context, empty *pb.Token) (*pb.Empty, error) {
-	log.Println("Token recieved")
-	go writeToFile(s)
-
-	return &pb.Empty{}, nil
-}
-
 func writeToFile(s *server) {
 	if rand.Intn(10) == 0 {
 		currentTime := time.Now().Format("2006-01-02 15:04:05")
