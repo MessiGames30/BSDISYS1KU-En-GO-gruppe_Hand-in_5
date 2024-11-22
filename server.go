@@ -148,8 +148,21 @@ func (s *server) Result(ctx context.Context, empty *pb.Empty) (*pb.AuctionDetail
 	return &auctions, nil
 }
 
+func (s *server) SyncAuction(ctx context.Context, auction *pb.AuctionDetails, time *pb.Time) (*pb.Empty, error) {
+	s.currentAuction = Auction{
+		TimeCreated:   auction.Timeleft,
+		HighestBid:    s.currentAuction.HighestBid,
+		HighestBidder: s.currentAuction.HighestBidder,
+	}
+	s.currentTime = max(s.currentTime, time.Time)
+}
+
 func (s *server) syncData() {
-	s.client
+	s.client.SyncAuction(context.Background(), &pb.AuctionDetails{
+		Timeleft:      s.currentAuction.TimeCreated,
+		HighestBid:    int64(s.currentAuction.HighestBid),
+		HighestBidder: int64(s.currentAuction.HighestBidder),
+	}, &pb.Time{Time: s.currentTime})
 }
 
 func (s *server) stepTime(time int64) {

@@ -13,7 +13,7 @@ service Auction {
   rpc StartFunction (time) returns (successStart);
 
   // Sync data
-  rpc SyncAuction (auctionDetails) returns (empty);
+  rpc SyncAuction (auctionDetails, time) returns (empty);
 
 }
 
