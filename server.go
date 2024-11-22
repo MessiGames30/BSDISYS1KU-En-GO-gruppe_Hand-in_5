@@ -24,9 +24,10 @@ type server struct {
 
 type Auction struct {
 	HighestBidder int
-	CurrentBid    int
+	HighestBid    int
 	TimeCreated   int64
 	Duration      int64
+	over          bool
 }
 
 func main() {
@@ -62,13 +63,13 @@ func main() {
 }
 
 func (s *server) StartFunction(ctx context.Context, time *pb.Time) (*pb.SuccessStart, error) {
-	s.currentTime = max(time.Time+1, s.currentTime+1)
+	s.stepTime(time.Time)
 	if s.started {
-		log.Println("Server already started")
+		log.Println("Server started auction at " + strconv.Itoa(int(s.currentTime)))
 		s.currentAuction = Auction{
-			CurrentBid:  0,
+			HighestBid:  0,
 			TimeCreated: s.currentTime,
-			Duration:    100,
+			Duration:    15,
 		}
 		return &pb.SuccessStart{
 			Message: "Server did not start",
@@ -112,33 +113,43 @@ func (s *server) Bid(ctx context.Context, bid *pb.Bid) (*pb.Ack, error) {
 	// Check if the bid is higher than the current bid
 	// If it is write the new bid to the memory
 	// If not return an error
-	s.currentTime++
+	s.stepTime(0)
 
-	auction := s.currentAuction
-	if auction.CurrentBid >= int(bid.Amount) || auction.HighestBidder == int(bid.BidderId) {
+	auction := &s.currentAuction
+	if int(bid.Amount) <= auction.HighestBid || auction.HighestBidder == int(bid.BidderId) || auction.over {
+		fmt.Println(bid.BidderId, "tried but failed to bid at", s.currentTime)
 		return &pb.Ack{
 			Status: false,
 		}, nil
 	}
 
-	auction.CurrentBid = int(bid.Amount)
+	auction.HighestBid = int(bid.Amount)
 	auction.HighestBidder = int(bid.BidderId)
+	fmt.Println(bid.BidderId, "raised the bid to", bid.Amount, "at", s.currentTime)
 	return &pb.Ack{
 		Status: true,
 	}, nil
 }
 
-func (s *server) OngoingAuction(ctx context.Context, empty *pb.Empty) (*pb.AuctionDetails, error) {
+func (s *server) Result(ctx context.Context, empty *pb.Empty) (*pb.AuctionDetails, error) {
 	// Scan ./Auctions for files
 	// Read the files and return the data
 	// If no files are found return an error
-	s.currentTime++
-	auction := s.currentAuction
+	s.stepTime(0)
+	auction := &s.currentAuction
 
+	fmt.Println("someone asked for the status at time", s.currentTime)
 	auctions := pb.AuctionDetails{
 		Timeleft:      (auction.TimeCreated + auction.Duration) - s.currentTime,
-		CurrentBid:    int64(auction.CurrentBid),
+		CurrentBid:    int64(auction.HighestBid),
 		HighestBidder: int64(auction.HighestBidder),
 	}
 	return &auctions, nil
+}
+
+func (s *server) stepTime(time int64) {
+	s.currentTime = max(time+1, s.currentTime+1)
+	if (s.currentAuction.TimeCreated+s.currentAuction.Duration)-s.currentTime <= 0 {
+		s.currentAuction.over = true
+	}
 }

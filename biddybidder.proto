@@ -7,7 +7,7 @@ service Auction {
   rpc Bid (bid) returns (ack);
 
   // A client receives broadcasted messages
-  rpc OngoingAuction (empty) returns (auctionDetails);
+  rpc Result (empty) returns (auctionDetails);
 
   // Start function wow
   rpc StartFunction (time) returns (successStart);
