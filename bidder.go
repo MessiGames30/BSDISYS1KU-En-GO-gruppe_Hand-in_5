@@ -50,10 +50,11 @@ func main() {
 
 		if text == "status" {
 			auction, _ := client.Result(context.Background(), &pb.Empty{})
-			if auction.timeLeft <= 0 {
-				fmt.Println("Auction is over, the winning bid")
+			if auction.Timeleft <= 0 {
+				fmt.Println("Auction is over, the winning bid was", auction.HighestBid, "made by", auction.HighestBidder)
+				return
 			}
-			fmt.Println(auction.HighestBidder, "is winning with bid", auction.CurrentBid)
+			fmt.Println(auction.HighestBidder, "is winning with bid", auction.HighestBid)
 			fmt.Println("there is ")
 		} else if text == "quit" {
 			break

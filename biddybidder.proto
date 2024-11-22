@@ -22,7 +22,7 @@ message successStart {
 // auctionDetails
 message auctionDetails {
   int64 timeleft = 1; // The time that is left on the auction
-  int64 currentBid = 2; // The current highest bid
+  int64 highestBid = 2; // The current highest bid
   int64 highestBidder = 3; // The current highest bidder
 }
 
