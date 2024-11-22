@@ -19,7 +19,7 @@ project
 
 Run the bidder/clientside part of the program
 ```
-go run client.go
+go run bidder.go
 ```
 Run the auction-serverside part of the program
 ```
