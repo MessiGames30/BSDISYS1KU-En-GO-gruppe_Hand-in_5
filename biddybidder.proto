@@ -13,7 +13,7 @@ service Auction {
   rpc StartFunction (time) returns (successStart);
 
   // To verify connection
-  rpc Ping (empty) returns (empty)
+  rpc Ping (empty) returns (empty);
 
   // Sync data
   rpc SyncAuction (auctionObject) returns (empty);

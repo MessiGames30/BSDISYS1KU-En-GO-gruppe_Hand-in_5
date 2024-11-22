@@ -22,6 +22,7 @@ const (
 	Auction_Bid_FullMethodName           = "/Auction/Bid"
 	Auction_Result_FullMethodName        = "/Auction/Result"
 	Auction_StartFunction_FullMethodName = "/Auction/StartFunction"
+	Auction_Ping_FullMethodName          = "/Auction/Ping"
 	Auction_SyncAuction_FullMethodName   = "/Auction/SyncAuction"
 )
 
@@ -35,6 +36,8 @@ type AuctionClient interface {
 	Result(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AuctionDetails, error)
 	// Start function wow
 	StartFunction(ctx context.Context, in *Time, opts ...grpc.CallOption) (*SuccessStart, error)
+	// To verify connection
+	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// Sync data
 	SyncAuction(ctx context.Context, in *AuctionObject, opts ...grpc.CallOption) (*Empty, error)
 }
@@ -77,6 +80,16 @@ func (c *auctionClient) StartFunction(ctx context.Context, in *Time, opts ...grp
 	return out, nil
 }
 
+func (c *auctionClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, Auction_Ping_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *auctionClient) SyncAuction(ctx context.Context, in *AuctionObject, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
@@ -97,6 +110,8 @@ type AuctionServer interface {
 	Result(context.Context, *Empty) (*AuctionDetails, error)
 	// Start function wow
 	StartFunction(context.Context, *Time) (*SuccessStart, error)
+	// To verify connection
+	Ping(context.Context, *Empty) (*Empty, error)
 	// Sync data
 	SyncAuction(context.Context, *AuctionObject) (*Empty, error)
 	mustEmbedUnimplementedAuctionServer()
@@ -117,6 +132,9 @@ func (UnimplementedAuctionServer) Result(context.Context, *Empty) (*AuctionDetai
 }
 func (UnimplementedAuctionServer) StartFunction(context.Context, *Time) (*SuccessStart, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartFunction not implemented")
+}
+func (UnimplementedAuctionServer) Ping(context.Context, *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedAuctionServer) SyncAuction(context.Context, *AuctionObject) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncAuction not implemented")
@@ -196,6 +214,24 @@ func _Auction_StartFunction_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auction_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuctionServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auction_Ping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuctionServer).Ping(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Auction_SyncAuction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AuctionObject)
 	if err := dec(in); err != nil {
@@ -232,6 +268,10 @@ var Auction_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StartFunction",
 			Handler:    _Auction_StartFunction_Handler,
+		},
+		{
+			MethodName: "Ping",
+			Handler:    _Auction_Ping_Handler,
 		},
 		{
 			MethodName: "SyncAuction",
