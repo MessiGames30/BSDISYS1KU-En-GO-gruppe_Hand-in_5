@@ -45,23 +45,35 @@ func main() {
 				Amount:   int64(newBid),
 			})
 			fmt.Println(result.Status)
+
+			if getStatus(client) {
+				break
+			}
 			continue
 		}
 
 		if text == "status" {
-			auction, _ := client.Result(context.Background(), &pb.Empty{})
-			if auction.Timeleft <= 0 {
-				fmt.Println("Auction is over, the winning bid was", auction.HighestBid, "made by", auction.HighestBidder)
-				return
+			if getStatus(client) {
+				break
 			}
-			fmt.Println(auction.HighestBidder, "is winning with bid", auction.HighestBid)
-			fmt.Println("there is ")
-		} else if text == "quit" {
 			break
-		} else {
-			fmt.Printf("Doesnt look like a number.\n")
 		}
 
-	}
+		if text == "quit" {
+			break
+		}
 
+		fmt.Printf("Doesnt look like a number.\n")
+	}
+}
+
+func getStatus(client pb.AuctionClient) bool {
+	auction, _ := client.Result(context.Background(), &pb.Empty{})
+	if auction.Timeleft < 0 {
+		fmt.Println("Auction is over, the winning bid was", auction.HighestBid, "made by", auction.HighestBidder)
+		return true
+	}
+	fmt.Println(auction.HighestBidder, "is winning with bid", auction.HighestBid)
+	fmt.Println("there is", auction.Timeleft, "units of time left")
+	return false
 }

@@ -141,7 +141,7 @@ func (s *server) Result(ctx context.Context, empty *pb.Empty) (*pb.AuctionDetail
 	fmt.Println("someone asked for the status at time", s.currentTime)
 	auctions := pb.AuctionDetails{
 		Timeleft:      (auction.TimeCreated + auction.Duration) - s.currentTime,
-		CurrentBid:    int64(auction.HighestBid),
+		HighestBid:    int64(auction.HighestBid),
 		HighestBidder: int64(auction.HighestBidder),
 	}
 	return &auctions, nil
@@ -149,7 +149,7 @@ func (s *server) Result(ctx context.Context, empty *pb.Empty) (*pb.AuctionDetail
 
 func (s *server) stepTime(time int64) {
 	s.currentTime = max(time+1, s.currentTime+1)
-	if (s.currentAuction.TimeCreated+s.currentAuction.Duration)-s.currentTime <= 0 {
+	if (s.currentAuction.TimeCreated+s.currentAuction.Duration)-s.currentTime < 0 {
 		s.currentAuction.over = true
 	}
 }
