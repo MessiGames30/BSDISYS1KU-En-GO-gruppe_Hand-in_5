@@ -126,6 +126,7 @@ func (s *server) Bid(ctx context.Context, bid *pb.Bid) (*pb.Ack, error) {
 	auction.HighestBid = int(bid.Amount)
 	auction.HighestBidder = int(bid.BidderId)
 	fmt.Println(bid.BidderId, "raised the bid to", bid.Amount, "at", s.currentTime)
+	s.syncData()
 	return &pb.Ack{
 		Status: true,
 	}, nil
@@ -145,6 +146,10 @@ func (s *server) Result(ctx context.Context, empty *pb.Empty) (*pb.AuctionDetail
 		HighestBidder: int64(auction.HighestBidder),
 	}
 	return &auctions, nil
+}
+
+func (s *server) syncData() {
+	s.client
 }
 
 func (s *server) stepTime(time int64) {
