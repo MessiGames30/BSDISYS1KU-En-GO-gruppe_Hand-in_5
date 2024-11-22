@@ -22,6 +22,7 @@ const (
 	Auction_Bid_FullMethodName           = "/Auction/Bid"
 	Auction_Result_FullMethodName        = "/Auction/Result"
 	Auction_StartFunction_FullMethodName = "/Auction/StartFunction"
+	Auction_SyncAuction_FullMethodName   = "/Auction/SyncAuction"
 )
 
 // AuctionClient is the client API for Auction service.
@@ -34,6 +35,8 @@ type AuctionClient interface {
 	Result(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AuctionDetails, error)
 	// Start function wow
 	StartFunction(ctx context.Context, in *Time, opts ...grpc.CallOption) (*SuccessStart, error)
+	// Sync data
+	SyncAuction(ctx context.Context, in *AuctionDetails, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type auctionClient struct {
@@ -74,6 +77,16 @@ func (c *auctionClient) StartFunction(ctx context.Context, in *Time, opts ...grp
 	return out, nil
 }
 
+func (c *auctionClient) SyncAuction(ctx context.Context, in *AuctionDetails, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, Auction_SyncAuction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuctionServer is the server API for Auction service.
 // All implementations must embed UnimplementedAuctionServer
 // for forward compatibility.
@@ -84,6 +97,8 @@ type AuctionServer interface {
 	Result(context.Context, *Empty) (*AuctionDetails, error)
 	// Start function wow
 	StartFunction(context.Context, *Time) (*SuccessStart, error)
+	// Sync data
+	SyncAuction(context.Context, *AuctionDetails) (*Empty, error)
 	mustEmbedUnimplementedAuctionServer()
 }
 
@@ -102,6 +117,9 @@ func (UnimplementedAuctionServer) Result(context.Context, *Empty) (*AuctionDetai
 }
 func (UnimplementedAuctionServer) StartFunction(context.Context, *Time) (*SuccessStart, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartFunction not implemented")
+}
+func (UnimplementedAuctionServer) SyncAuction(context.Context, *AuctionDetails) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SyncAuction not implemented")
 }
 func (UnimplementedAuctionServer) mustEmbedUnimplementedAuctionServer() {}
 func (UnimplementedAuctionServer) testEmbeddedByValue()                 {}
@@ -178,6 +196,24 @@ func _Auction_StartFunction_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auction_SyncAuction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AuctionDetails)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuctionServer).SyncAuction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auction_SyncAuction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuctionServer).SyncAuction(ctx, req.(*AuctionDetails))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auction_ServiceDesc is the grpc.ServiceDesc for Auction service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -196,6 +232,10 @@ var Auction_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StartFunction",
 			Handler:    _Auction_StartFunction_Handler,
+		},
+		{
+			MethodName: "SyncAuction",
+			Handler:    _Auction_SyncAuction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
