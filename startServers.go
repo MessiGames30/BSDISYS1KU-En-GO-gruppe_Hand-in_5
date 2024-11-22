@@ -12,12 +12,14 @@ import (
 func main() {
 
 	conn, err := grpc.NewClient("127.0.0.2:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("Failed to connect: %v", err)
-	}
+
 	defer conn.Close()
 
 	client := pb.NewAuctionClient(conn)
+	_, err = client.Ping(context.Background(), &pb.Empty{})
+	if err != nil {
+		log.Fatalf("Failed to connect: %v", err)
+	}
 	message, err := client.StartFunction(context.Background(), &pb.Time{Time: 0})
 	log.Println(message)
 }

@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -26,17 +25,19 @@ func main() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		if newBid, err := strconv.Atoi(text); err == nil {
-			result, err2 := client.Bid(context.Background(), &pb.Bid{
-				BidderId: int64(bidderId),
-				Amount:   int64(newBid),
-			})
-			if err2 != nil {
-				client = *getConnection()
-				continue
+			for {
+				result, err2 := client.Bid(context.Background(), &pb.Bid{
+					BidderId: int64(bidderId),
+					Amount:   int64(newBid),
+				})
+				if err2 != nil {
+					client = *getConnection()
+					continue
+				}
+
+				fmt.Println(result.Status)
+				break
 			}
-
-			fmt.Println(result.Status)
-
 			if getStatus(client) {
 				break
 			}
@@ -47,7 +48,7 @@ func main() {
 			if getStatus(client) {
 				break
 			}
-			break
+			continue
 		}
 
 		if text == "quit" {
@@ -77,12 +78,12 @@ func getConnection() *pb.AuctionClient {
 	for {
 		addrString = "127.0.0." + strconv.Itoa(address) + ":50051"
 		conn, err := grpc.NewClient(addrString, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client = pb.NewAuctionClient(conn)
+		_, err = client.Ping(context.Background(), &pb.Empty{})
 		if err != nil {
-			log.Fatalf("Failed to connect: %v", err)
 			address++
 			continue
 		}
-		client = pb.NewAuctionClient(conn)
 		break
 	}
 	fmt.Println("Connected to server", address)

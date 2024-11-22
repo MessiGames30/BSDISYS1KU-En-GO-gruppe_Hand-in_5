@@ -148,12 +148,16 @@ func (s *server) Result(ctx context.Context, empty *pb.Empty) (*pb.AuctionDetail
 	return &auctions, nil
 }
 
+func (s *server) Ping(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
+	return &pb.Empty{}, nil
+}
+
 func (s *server) SyncAuction(ctx context.Context, auction *pb.AuctionObject) (*pb.Empty, error) {
 	s.currentAuction = Auction{
 		TimeCreated:   auction.TimeCreated,
 		Duration:      auction.Duration,
-		HighestBid:    s.currentAuction.HighestBid,
-		HighestBidder: s.currentAuction.HighestBidder,
+		HighestBid:    int(auction.HighestBid),
+		HighestBidder: int(auction.HighestBidder),
 	}
 	s.currentTime = max(s.currentTime, auction.CurrentTime)
 	fmt.Println("recieved synced info")
