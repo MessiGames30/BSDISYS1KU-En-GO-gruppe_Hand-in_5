@@ -15,23 +15,9 @@ import (
 )
 
 func main() {
-	address := 2
-	var addrString string
 	bidderId := rand.Intn(10000)
-	var client pb.AuctionClient
 
-	// server stuff
-	for {
-		addrString = "127.0.0." + strconv.Itoa(address) + ":50051"
-		conn, err := grpc.NewClient(addrString, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			log.Fatalf("Failed to connect: %v", err)
-			continue
-		}
-		defer conn.Close()
-		client = pb.NewAuctionClient(conn)
-		break
-	}
+	client := *getConnection()
 
 	fmt.Println("started as bidder with id: " + strconv.Itoa(bidderId))
 	scanner := bufio.NewScanner(os.Stdin)
@@ -40,10 +26,15 @@ func main() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		if newBid, err := strconv.Atoi(text); err == nil {
-			result, _ := client.Bid(context.Background(), &pb.Bid{
+			result, err2 := client.Bid(context.Background(), &pb.Bid{
 				BidderId: int64(bidderId),
 				Amount:   int64(newBid),
 			})
+			if err2 != nil {
+				client = *getConnection()
+				continue
+			}
+
 			fmt.Println(result.Status)
 
 			if getStatus(client) {
@@ -76,4 +67,24 @@ func getStatus(client pb.AuctionClient) bool {
 	fmt.Println(auction.HighestBidder, "is winning with bid", auction.HighestBid)
 	fmt.Println("there is", auction.Timeleft, "units of time left")
 	return false
+}
+
+func getConnection() *pb.AuctionClient {
+	address := 2
+	var addrString string
+	var client pb.AuctionClient
+	// server stuff
+	for {
+		addrString = "127.0.0." + strconv.Itoa(address) + ":50051"
+		conn, err := grpc.NewClient(addrString, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Fatalf("Failed to connect: %v", err)
+			address++
+			continue
+		}
+		client = pb.NewAuctionClient(conn)
+		break
+	}
+	fmt.Println("Connected to server", address)
+	return &client
 }
