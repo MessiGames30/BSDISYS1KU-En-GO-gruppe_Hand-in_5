@@ -155,6 +155,7 @@ func (s *server) SyncAuction(ctx context.Context, auction *pb.AuctionDetails, ti
 		HighestBidder: s.currentAuction.HighestBidder,
 	}
 	s.currentTime = max(s.currentTime, time.Time)
+	return &pb.Empty{}, nil
 }
 
 func (s *server) syncData() {

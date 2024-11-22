@@ -13,13 +13,22 @@ service Auction {
   rpc StartFunction (time) returns (successStart);
 
   // Sync data
-  rpc SyncAuction (auctionDetails, time) returns (empty);
+  rpc SyncAuction (auctionObject) returns (empty);
 
 }
 
 // message containing successtatus 
 message successStart {
     string message = 1;
+}
+
+// auctionDetails
+message auctionObject {
+  int64 timeCreated = 1;
+  int64 duration = 2;
+  int64 highestBid = 3; // The current highest bid
+  int64 highestBidder = 4; // The current highest bidder
+  int64 currentTime = 5;
 }
 
 // auctionDetails
