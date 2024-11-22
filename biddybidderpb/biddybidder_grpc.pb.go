@@ -36,7 +36,7 @@ type AuctionClient interface {
 	// Start function wow
 	StartFunction(ctx context.Context, in *Time, opts ...grpc.CallOption) (*SuccessStart, error)
 	// Sync data
-	SyncAuction(ctx context.Context, in *AuctionDetails, opts ...grpc.CallOption) (*Empty, error)
+	SyncAuction(ctx context.Context, in *AuctionObject, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type auctionClient struct {
@@ -77,7 +77,7 @@ func (c *auctionClient) StartFunction(ctx context.Context, in *Time, opts ...grp
 	return out, nil
 }
 
-func (c *auctionClient) SyncAuction(ctx context.Context, in *AuctionDetails, opts ...grpc.CallOption) (*Empty, error) {
+func (c *auctionClient) SyncAuction(ctx context.Context, in *AuctionObject, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, Auction_SyncAuction_FullMethodName, in, out, cOpts...)
@@ -98,7 +98,7 @@ type AuctionServer interface {
 	// Start function wow
 	StartFunction(context.Context, *Time) (*SuccessStart, error)
 	// Sync data
-	SyncAuction(context.Context, *AuctionDetails) (*Empty, error)
+	SyncAuction(context.Context, *AuctionObject) (*Empty, error)
 	mustEmbedUnimplementedAuctionServer()
 }
 
@@ -118,7 +118,7 @@ func (UnimplementedAuctionServer) Result(context.Context, *Empty) (*AuctionDetai
 func (UnimplementedAuctionServer) StartFunction(context.Context, *Time) (*SuccessStart, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartFunction not implemented")
 }
-func (UnimplementedAuctionServer) SyncAuction(context.Context, *AuctionDetails) (*Empty, error) {
+func (UnimplementedAuctionServer) SyncAuction(context.Context, *AuctionObject) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncAuction not implemented")
 }
 func (UnimplementedAuctionServer) mustEmbedUnimplementedAuctionServer() {}
@@ -197,7 +197,7 @@ func _Auction_StartFunction_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _Auction_SyncAuction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuctionDetails)
+	in := new(AuctionObject)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func _Auction_SyncAuction_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: Auction_SyncAuction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuctionServer).SyncAuction(ctx, req.(*AuctionDetails))
+		return srv.(AuctionServer).SyncAuction(ctx, req.(*AuctionObject))
 	}
 	return interceptor(ctx, in, info, handler)
 }
