@@ -18,6 +18,6 @@ func main() {
 	defer conn.Close()
 
 	client := pb.NewAuctionClient(conn)
-	message, err := client.StartFunction(context.Background(), &pb.Empty{})
+	message, err := client.StartFunction(context.Background(), &pb.Time{Time: 0})
 	log.Println(message)
 }

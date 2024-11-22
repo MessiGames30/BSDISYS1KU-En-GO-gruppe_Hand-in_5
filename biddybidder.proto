@@ -21,14 +21,14 @@ message successStart {
 
 // auctionDetails
 message auctionDetails {
-  int64 auctionID = 1; // auctionID
-  int64 timeleft = 2; // The time that is left on the auction
-  int64 currentBid = 3; // The current highest bid
+  int64 timeleft = 1; // The time that is left on the auction
+  int64 currentBid = 2; // The current highest bid
+  int64 highestBidder = 3; // The current highest bidder
 }
 
 // Message a client sends to the chat
 message bid {
-  int64 auctionId = 1;
+  int64 bidderId = 1;
   int64 amount = 2;  // Bidding amount for the auction item
 }
 

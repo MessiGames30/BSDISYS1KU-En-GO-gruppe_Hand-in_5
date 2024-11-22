@@ -19,13 +19,14 @@ type server struct {
 	started        bool
 	currentAuction Auction
 	client         pb.AuctionClient
-	currentTime    int
+	currentTime    int64
 }
 
 type Auction struct {
-	CurrentBid  int
-	TimeCreated int
-	Duration    int
+	HighestBidder int
+	CurrentBid    int
+	TimeCreated   int64
+	Duration      int64
 }
 
 func main() {
@@ -60,7 +61,8 @@ func main() {
 
 }
 
-func (s *server) StartFunction(ctx context.Context, time *pb.time) (*pb.SuccessStart, error) {
+func (s *server) StartFunction(ctx context.Context, time *pb.Time) (*pb.SuccessStart, error) {
+	s.currentTime = max(time.Time+1, s.currentTime+1)
 	if s.started {
 		log.Println("Server already started")
 		s.currentAuction = Auction{
@@ -76,10 +78,10 @@ func (s *server) StartFunction(ctx context.Context, time *pb.time) (*pb.SuccessS
 	log.Println("Server " + strconv.Itoa(s.address) + " started")
 
 	s.targetAddress = s.address + 1
-	message, client := connectToServer(s.targetAddress)
+	message, client := connectToServer(s)
 	if message == nil {
 		s.targetAddress = 2
-		message, client = connectToServer(s.targetAddress)
+		message, client = connectToServer(s)
 
 	}
 	s.client = client
@@ -87,12 +89,12 @@ func (s *server) StartFunction(ctx context.Context, time *pb.time) (*pb.SuccessS
 	log.Println("Connect Success to address" + strconv.Itoa(s.targetAddress))
 
 	return &pb.SuccessStart{
-		Message: "Server " + strconv.Itoa(s.address) + " started",
+		Message: "Server " + strconv.Itoa(s.address) + " started at " + strconv.Itoa(int(s.currentTime)),
 	}, nil
 }
 
-func connectToServer(address int) (*pb.SuccessStart, pb.AuctionClient) {
-	connectAddress := "127.0.0." + strconv.Itoa(address) + ":50051"
+func connectToServer(s *server) (*pb.SuccessStart, pb.AuctionClient) {
+	connectAddress := "127.0.0." + strconv.Itoa(s.targetAddress) + ":50051"
 	conn, err := grpc.NewClient(connectAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
@@ -100,7 +102,7 @@ func connectToServer(address int) (*pb.SuccessStart, pb.AuctionClient) {
 	// defer conn.Close()
 
 	client := pb.NewAuctionClient(conn)
-	message, err := client.StartFunction(context.Background(), &pb.Empty{})
+	message, err := client.StartFunction(context.Background(), &pb.Time{Time: s.currentTime})
 	return message, client
 
 }
@@ -110,9 +112,19 @@ func (s *server) Bid(ctx context.Context, bid *pb.Bid) (*pb.Ack, error) {
 	// Check if the bid is higher than the current bid
 	// If it is write the new bid to the memory
 	// If not return an error
+	s.currentTime++
 
+	auction := s.currentAuction
+	if auction.CurrentBid >= int(bid.Amount) || auction.HighestBidder == int(bid.BidderId) {
+		return &pb.Ack{
+			Status: false,
+		}, nil
+	}
+
+	auction.CurrentBid = int(bid.Amount)
+	auction.HighestBidder = int(bid.BidderId)
 	return &pb.Ack{
-		Status: false,
+		Status: true,
 	}, nil
 }
 
@@ -120,6 +132,13 @@ func (s *server) OngoingAuction(ctx context.Context, empty *pb.Empty) (*pb.Aucti
 	// Scan ./Auctions for files
 	// Read the files and return the data
 	// If no files are found return an error
-	auctions := pb.AuctionDetails{}
+	s.currentTime++
+	auction := s.currentAuction
+
+	auctions := pb.AuctionDetails{
+		Timeleft:      (auction.TimeCreated + auction.Duration) - s.currentTime,
+		CurrentBid:    int64(auction.CurrentBid),
+		HighestBidder: int64(auction.HighestBidder),
+	}
 	return &auctions, nil
 }
