@@ -37,7 +37,7 @@ message ack {
 }
 
 message time {
-  int time = 1;
+  int64 time = 1;
 }
 
 // Empty message

@@ -19,9 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Auction_Bid_FullMethodName             = "/Auction/Bid"
-	Auction_OngoingAuctions_FullMethodName = "/Auction/OngoingAuctions"
-	Auction_StartFunction_FullMethodName   = "/Auction/StartFunction"
+	Auction_Bid_FullMethodName            = "/Auction/Bid"
+	Auction_OngoingAuction_FullMethodName = "/Auction/OngoingAuction"
+	Auction_StartFunction_FullMethodName  = "/Auction/StartFunction"
 )
 
 // AuctionClient is the client API for Auction service.
@@ -31,9 +31,9 @@ type AuctionClient interface {
 	// A client sends a message to the chat
 	Bid(ctx context.Context, in *Bid, opts ...grpc.CallOption) (*Ack, error)
 	// A client receives broadcasted messages
-	OngoingAuctions(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Auctions, error)
+	OngoingAuction(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AuctionDetails, error)
 	// Start function wow
-	StartFunction(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SuccessStart, error)
+	StartFunction(ctx context.Context, in *Time, opts ...grpc.CallOption) (*SuccessStart, error)
 }
 
 type auctionClient struct {
@@ -54,17 +54,17 @@ func (c *auctionClient) Bid(ctx context.Context, in *Bid, opts ...grpc.CallOptio
 	return out, nil
 }
 
-func (c *auctionClient) OngoingAuctions(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Auctions, error) {
+func (c *auctionClient) OngoingAuction(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AuctionDetails, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Auctions)
-	err := c.cc.Invoke(ctx, Auction_OngoingAuctions_FullMethodName, in, out, cOpts...)
+	out := new(AuctionDetails)
+	err := c.cc.Invoke(ctx, Auction_OngoingAuction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *auctionClient) StartFunction(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SuccessStart, error) {
+func (c *auctionClient) StartFunction(ctx context.Context, in *Time, opts ...grpc.CallOption) (*SuccessStart, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SuccessStart)
 	err := c.cc.Invoke(ctx, Auction_StartFunction_FullMethodName, in, out, cOpts...)
@@ -81,9 +81,9 @@ type AuctionServer interface {
 	// A client sends a message to the chat
 	Bid(context.Context, *Bid) (*Ack, error)
 	// A client receives broadcasted messages
-	OngoingAuctions(context.Context, *Empty) (*Auctions, error)
+	OngoingAuction(context.Context, *Empty) (*AuctionDetails, error)
 	// Start function wow
-	StartFunction(context.Context, *Empty) (*SuccessStart, error)
+	StartFunction(context.Context, *Time) (*SuccessStart, error)
 	mustEmbedUnimplementedAuctionServer()
 }
 
@@ -97,10 +97,10 @@ type UnimplementedAuctionServer struct{}
 func (UnimplementedAuctionServer) Bid(context.Context, *Bid) (*Ack, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bid not implemented")
 }
-func (UnimplementedAuctionServer) OngoingAuctions(context.Context, *Empty) (*Auctions, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method OngoingAuctions not implemented")
+func (UnimplementedAuctionServer) OngoingAuction(context.Context, *Empty) (*AuctionDetails, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OngoingAuction not implemented")
 }
-func (UnimplementedAuctionServer) StartFunction(context.Context, *Empty) (*SuccessStart, error) {
+func (UnimplementedAuctionServer) StartFunction(context.Context, *Time) (*SuccessStart, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartFunction not implemented")
 }
 func (UnimplementedAuctionServer) mustEmbedUnimplementedAuctionServer() {}
@@ -142,26 +142,26 @@ func _Auction_Bid_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Auction_OngoingAuctions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auction_OngoingAuction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuctionServer).OngoingAuctions(ctx, in)
+		return srv.(AuctionServer).OngoingAuction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Auction_OngoingAuctions_FullMethodName,
+		FullMethod: Auction_OngoingAuction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuctionServer).OngoingAuctions(ctx, req.(*Empty))
+		return srv.(AuctionServer).OngoingAuction(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Auction_StartFunction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(Time)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func _Auction_StartFunction_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: Auction_StartFunction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuctionServer).StartFunction(ctx, req.(*Empty))
+		return srv.(AuctionServer).StartFunction(ctx, req.(*Time))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -190,8 +190,8 @@ var Auction_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Auction_Bid_Handler,
 		},
 		{
-			MethodName: "OngoingAuctions",
-			Handler:    _Auction_OngoingAuctions_Handler,
+			MethodName: "OngoingAuction",
+			Handler:    _Auction_OngoingAuction_Handler,
 		},
 		{
 			MethodName: "StartFunction",
